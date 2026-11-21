@@ -247,11 +247,10 @@ class AfipImportWizard(models.TransientModel):
             move = self.env["account.move"].create(move_vals)
 
             # Agregamos el rate despues de crear la factura, para que Odoo no lo recalcule.
-            # The field comes from `account_ux`, which this module does not depend on: a
-            # base without it imported the listing until the first foreign currency
-            # document, and died there.
-            if line.currency_rate and line.currency_rate != 1 and "inverse_invoice_currency_rate" in move._fields:
-                move.inverse_invoice_currency_rate = line.currency_rate
+            # ARCA writes it as pesos per unit of the document currency, and the invoice
+            # holds it the other way round, as units of that currency per peso.
+            if line.currency_rate and line.currency_rate != 1:
+                move.invoice_currency_rate = 1 / line.currency_rate
 
             # Si tiene otros tributos, modificamos el valor por defecto con el wizard
             if line.otros_tributos > 0:

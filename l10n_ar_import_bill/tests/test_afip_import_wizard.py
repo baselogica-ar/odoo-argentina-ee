@@ -1,5 +1,7 @@
+from io import BytesIO
 from os import path
 
+import openpyxl
 from odoo.addons.l10n_ar.tests.common import TestArCommon
 from odoo.addons.l10n_ar.tools.partner_identifiers import AR_CUIT_AFIP_CODE
 from odoo.addons.l10n_ar_import_bill.wizards.afip_import_wizard_line import AR_CUIT_IDENTIFIER_KEY
@@ -214,3 +216,34 @@ class TestAfipImportWizard(TestArCommon):
             "Every document of the listing is recognized as already imported",
         )
         self.assertEqual(otra_vez.total_bills_to_create, 0)
+
+    def _listing_in_dollars(self, rate):
+        """One of the listings of the tests, cut down to its first document and turned into dollars."""
+        workbook = openpyxl.load_workbook(BytesIO(self._fixture("invoice_type_test.xlsx")))
+        sheet = workbook.active
+        header = [cell.value for cell in sheet[2]]
+        sheet.delete_rows(4, sheet.max_row)
+        sheet.cell(3, header.index("Moneda") + 1, "USD")
+        sheet.cell(3, header.index("Tipo Cambio") + 1, rate)
+        listing = BytesIO()
+        workbook.save(listing)
+        return listing.getvalue()
+
+    def test_a_foreign_currency_document_takes_the_rate_of_the_listing(self):
+        """A document in dollars is booked at the exchange rate ARCA wrote in the listing,
+        not at the one the database holds for that day."""
+        self.env.ref("base.USD").active = True
+        attachment = self.env["ir.attachment"].create({"name": "dolares.xlsx", "raw": self._listing_in_dollars(914)})
+        journal = self.company_data["default_journal_purchase"]
+        wizard = self.env["afip.import.wizard"].browse(journal.import_bills_from_xls(attachment)["res_id"])
+        self.assertEqual(wizard.line_ids.mapped("amount_total"), [12100], "One document of 12,100 dollars")
+
+        move = self.env["account.move"].browse(wizard.action_confirm()["res_id"])
+
+        self.assertEqual(move.currency_id, self.env.ref("base.USD"))
+        self.assertAlmostEqual(
+            1 / move.invoice_currency_rate, 914, places=2, msg="The rate of the listing is the rate of the invoice"
+        )
+        self.assertAlmostEqual(
+            abs(move.amount_total_signed), 12100 * 914, delta=0.05, msg="The total in pesos comes from that rate"
+        )

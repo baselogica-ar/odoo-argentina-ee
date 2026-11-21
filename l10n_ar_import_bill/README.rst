@@ -81,27 +81,13 @@ comprobante y recién al confirmar crea los asientos. Qué hace con cada línea:
   facturas cuyo total coincide con el del listado (tolerancia de 0,10). El resto
   queda en borrador.
 
-Importación desde la guía de importación inicial
-------------------------------------------------
-El mismo importador aparece en la guía de importación inicial de contabilidad
-(``account_balance_import``), con dos accesos: "Import Sales from ARCA" e
-"Import Purchases from ARCA". Para usarlos, la compañía tiene que tener definidos
-los periodos fiscales. En ese camino se pide una cuenta de contrapartida, que
-reemplaza a las cuentas de las líneas del asiento (salvo la de cuenta a cobrar o a
-pagar), y solo se admiten comprobantes anteriores a la fecha de inicio de la
-contabilidad de la compañía.
-
 Detalles técnicos
 -----------------
 * ``account.journal``: ``create_document_from_attachment`` decide si el archivo va
   al importador; ``import_bills_from_xls`` lee la planilla con pandas y openpyxl,
   valida las columnas y crea el asistente. En compras toma las columnas del
   emisor y en ventas las del receptor; el número se arma como ``PPPPP-NNNNNNNN``.
-* ``account.import.summary``: ``action_import_sales_from_arca`` y
-  ``action_import_purchases_from_arca`` abren el asistente desde la guía; los
-  botones los agrega un patch de ``AccountImportGuide`` en ``static/src/``.
 * ``afip.import.wizard`` (transitorio): cabecera de la importación.
-  ``action_process_file`` procesa el archivo subido desde la guía y
   ``action_confirm`` crea las facturas.
 * ``afip.import.wizard.line`` (transitorio): una línea por comprobante, con el
   campo almacenado ``exists`` y la resolución de contacto, tipo de documento
@@ -124,14 +110,6 @@ Desde el diario:
    Con el ícono de borrar puede quitar una línea.
 #. Marque "Auto-validate Imported Invoices" si quiere que las facturas queden
    confirmadas, y presione "Create Invoices".
-
-Desde la guía de importación inicial:
-
-#. Defina los periodos fiscales de la compañía.
-#. En la guía, elija "Import Sales from ARCA" o "Import Purchases from ARCA".
-#. Elija el diario y la cuenta de contrapartida, cargue el archivo y presione
-   "Continue".
-#. Revise la previsualización y presione "Create Invoices".
 
 El listado tiene que ser el que exporta ARCA, sin cambios manuales: si faltan
 columnas el importador las nombra y no importa nada.

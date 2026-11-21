@@ -7,17 +7,11 @@
     "website": "www.adhoc.com.ar",
     "license": "LGPL-3",
     "summary": "Import invoices from the ARCA 'Mis Comprobantes' spreadsheet",
-    "depends": ["account_accountant", "l10n_ar_edi", "account_invoice_tax", "account_balance_import"],
+    "depends": ["account_accountant", "l10n_ar_edi", "account_invoice_tax"],
     "data": [
         "security/ir.access.csv",
         "wizards/afip_import_wizard.xml",
     ],
-    "assets": {
-        "web.assets_backend": [
-            "l10n_ar_import_bill/static/src/js/**/*",
-            "l10n_ar_import_bill/static/src/xml/**/*",
-        ],
-    },
     "installable": True,
     "auto_install": False,
     "application": False,
